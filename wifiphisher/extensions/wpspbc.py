@@ -10,19 +10,18 @@ Define three WPS states
 """
 
 import logging
+import time
 import os
 import signal
 import subprocess
-import time
-from collections import defaultdict
 from threading import Timer
-
+from collections import defaultdict
 import scapy.layers.dot11 as dot11
 import wifiphisher.common.extensions as extensions
 
 logger = logging.getLogger(__name__)
 
-WPS_IDLE, WPS_CONNECTING, WPS_CONNECTED = list(range(3))
+WPS_IDLE, WPS_CONNECTING, WPS_CONNECTED = range(3)
 # wait 3 seconds to give the wps state to the phishinghttp module
 WAIT_CNT = 3
 

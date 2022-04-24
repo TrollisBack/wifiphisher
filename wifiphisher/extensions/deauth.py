@@ -7,10 +7,8 @@ Extension that sends 3 DEAUTH/DISAS Frames:
 
 import logging
 from collections import defaultdict
-
 import scapy.layers.dot11 as dot11
 import wifiphisher.common.constants as constants
-import wifiphisher.common.globals as universal
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +123,7 @@ class Deauth(object):
 
             # only compare essid when -dE is given
             return ((self._data.args.deauth_essid
-                     and essid == self._data.args.deauth_essid) or
+                     and essid == self._data.target_ap_essid) or
                     # frenzy deauth
                     (not self._data.args.deauth_essid
                      and not self._data.target_ap_bssid) or
@@ -166,7 +164,7 @@ class Deauth(object):
             channel = ord(packet[dot11.Dot11Elt][2].info)
 
             # check if this is valid channel
-            if channel not in universal.ALL_2G_CHANNELS:
+            if channel not in constants.ALL_2G_CHANNELS:
                 return self._packets_to_send
         except (TypeError, IndexError):
             # just return empty channel and packet
@@ -275,7 +273,7 @@ class Deauth(object):
         :rtype: list
         """
 
-        return list(map("DEAUTH/DISAS - {}".format, self._observed_clients))
+        return map("DEAUTH/DISAS - {}".format, self._observed_clients)
 
     def send_channels(self):
         """
@@ -293,12 +291,7 @@ class Deauth(object):
         if self._data.target_ap_bssid and not self._data.args.deauth_essid\
                 and not self._data.args.channel_monitor:
             return [self._data.target_ap_channel]
-
-        if self._data.args.deauth_channels and \
-           len(self._data.args.deauth_channels) > 0:
-            return list(map(str, self._data.args.deauth_channels))
-
-        return list(map(str, universal.ALL_2G_CHANNELS))
+        return map(str, constants.ALL_2G_CHANNELS)
 
     def on_exit(self):
         """

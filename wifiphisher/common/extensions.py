@@ -2,17 +2,15 @@
 All logic regarding extensions management
 """
 
-import collections
-import importlib
-import logging
-import threading
 import time
+import importlib
+import threading
+import logging
+import collections
 from collections import defaultdict
-
-import scapy.arch.linux as linux
 import scapy.layers.dot11 as dot11
+import scapy.arch.linux as linux
 import wifiphisher.common.constants as constants
-import wifiphisher.common.globals as universal
 import wifiphisher.extensions.deauth as deauth_extension
 
 logger = logging.getLogger(__name__)
@@ -146,7 +144,7 @@ class ExtensionManager(object):
 
         # set the current channel to the ap channel
         self._nm.set_interface_channel(self._interface,
-                                       int(self._shared_data.target_ap_channel))
+                                       int(self._current_channel))
 
         # if the stop flag not set, change the channel
         while self._should_continue:
@@ -213,7 +211,7 @@ class ExtensionManager(object):
 
         # Convert shared_data from dict to named tuple
         shared_data = collections.namedtuple('GenericDict',
-                                             list(shared_data.keys()))(**shared_data)
+                                             shared_data.keys())(**shared_data)
         self._shared_data = shared_data
 
         # Initialize all extensions with the shared data
@@ -333,7 +331,7 @@ class ExtensionManager(object):
         # clear the _packets_to_send on every run of the
         # sniffed frame
         self._packets_to_send = defaultdict(list)
-        channels = [str(ch) for ch in universal.ALL_2G_CHANNELS] + ["*"]
+        channels = [str(ch) for ch in constants.ALL_2G_CHANNELS] + ["*"]
         for extension in self._extensions:
             ext_pkts = extension.get_packet(pkt)
             for channel in channels:
@@ -365,11 +363,13 @@ class ExtensionManager(object):
         """
 
         # continue to find clients until told otherwise
-        dot11.sniff(
-            iface=self._interface,
-            prn=self._process_packet,
-            store=0,
-            stop_filter=self._stopfilter)
+        while self._should_continue:
+            dot11.sniff(
+                iface=self._interface,
+                prn=self._process_packet,
+                count=1,
+                store=0,
+                stop_filter=self._stopfilter)
 
     def _send(self):
         """

@@ -4,14 +4,13 @@ All logic regarding the Operation Modes (opmodes).
 The opmode is defined based on the user's arguments and the available
 resources of the host system
 """
-import argparse
-import logging
-import os
 import sys
-
+import os
+import logging
+import argparse
 import pyric
-import wifiphisher.common.constants as constants
 import wifiphisher.common.interfaces as interfaces
+import wifiphisher.common.constants as constants
 import wifiphisher.extensions.handshakeverify as handshakeverify
 
 logger = logging.getLogger(__name__)
@@ -33,9 +32,7 @@ class OpMode(object):
 
         self.op_mode = 0x0
         # True if the system only contains one phy interface
-        # or if the user wants us to use only one phy
-        # e.g. using the --interface option
-        self._use_one_phy = False
+        self._is_one_phy_interface = False
         # The card which supports monitor and ap mode
         self._perfect_card = None
 
@@ -50,9 +47,8 @@ class OpMode(object):
         :rtype: None
         """
 
-        self._perfect_card, self._use_one_phy =\
-            interfaces.is_add_vif_required(args.interface, 
-                    args.internetinterface, args.wpspbc_assoc_interface)
+        self._perfect_card, self._is_one_phy_interface =\
+            interfaces.is_add_vif_required(args)
         self._check_args(args)
 
     def _check_args(self, args):
@@ -120,10 +116,10 @@ class OpMode(object):
 
         # if args.deauth_essid is set we need the second card to
         # do the frequency hopping
-        if args.deauth_essid and self._use_one_phy:
-            print(('[' + constants.R + '!' + constants.W +
+        if args.deauth_essid and self._is_one_phy_interface:
+            print('[' + constants.R + '!' + constants.W +
                   '] Only one card was found. Wifiphisher will deauth only '
-                  'on the target AP channel'))
+                  'on the target AP channel')
 
         # args.wAI should be used with args.wE
         if args.wpspbc_assoc_interface and not args.wps_pbc:
@@ -131,28 +127,6 @@ class OpMode(object):
                 '[' + constants.R + '!' + constants.W +
                 '] --wpspbc-assoc-interface (-wAI) requires --wps-pbc (-wP) option.'
             )
-
-        # if args.logpath is defined args.logging must be set too
-        if args.logpath and not args.logging:
-            sys.exit(
-                '[' + constants.R + '!' + constants.W +
-                '] --logpath (-lP) requires --logging option.'
-            )
-
-        # if args.credential_log_path is defined args.logging must be set too
-        if args.credential_log_path and not args.logging:
-            sys.exit(
-                '[' + constants.R + '!' + constants.W +
-                '] --credential-log-path (-cP) requires --logging option.'
-            )
-
-        if args.deauth_channels:
-            for channel in args.deauth_channels:
-                if channel > 14 or channel < 0:
-                    sys.exit(
-                        '[' + constants.R + '!' + constants.W +
-                        '] --deauth-channels (-dC) requires channels in range 1-14.'
-                    )
 
     def set_opmode(self, args, network_manager):
         """
@@ -205,7 +179,7 @@ class OpMode(object):
         """
 
         if not args.internetinterface and not args.noextensions:
-            if not self._use_one_phy:
+            if not self._is_one_phy_interface:
                 # check if there is WPS association interface
                 if args.wpspbc_assoc_interface:
                     self.op_mode = constants.OP_MODE7
@@ -214,9 +188,6 @@ class OpMode(object):
                     self.op_mode = constants.OP_MODE1
                     logger.info("Starting OP_MODE1 (0x1)")
             else:
-                # TODO: We should not add any vifs here.
-                # These should happen after the interface 
-                # checks in main engine
                 if self._perfect_card is not None:
                     network_manager.add_virtual_interface(self._perfect_card)
                 # check if there is WPS association interface
@@ -227,7 +198,7 @@ class OpMode(object):
                     self.op_mode = constants.OP_MODE5
                     logger.info("Starting OP_MODE5 (0x5)")
         if args.internetinterface and not args.noextensions:
-            if not self._use_one_phy:
+            if not self._is_one_phy_interface:
                 self.op_mode = constants.OP_MODE2
                 logger.info("Starting OP_MODE2 (0x2)")
             else:
@@ -252,8 +223,7 @@ class OpMode(object):
         :rtype: bool
         """
 
-        return self.op_mode in [constants.OP_MODE2, constants.OP_MODE3,
-                                constants.OP_MODE6]
+        return self.op_mode in [constants.OP_MODE2, constants.OP_MODE3]
 
     def extensions_enabled(self):
         """

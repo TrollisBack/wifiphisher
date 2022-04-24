@@ -1,36 +1,34 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-# pylint: skip-file
-
+#pylint: skip-file
 import os
 
 dir_of_executable = os.path.dirname(__file__)
 path_to_project_root = os.path.abspath(
     os.path.join(dir_of_executable, '../../wifiphisher'))
 dir_of_data = path_to_project_root + '/data/'
-phishing_pages_dir = dir_of_data + "phishing-pages/"
 
 # Basic configuration
-DEV = 1
+DEV = 0
 DEAUTH_EXTENSION = "deauth"
 LURE10_EXTENSION = "lure10"
 WPSPBC = "wpspbc"
 KNOWN_BEACONS_EXTENSION = "knownbeacons"
 HANDSHAKE_VALIDATE_EXTENSION = "handshakeverify"
-ROGUEHOSTAPDINFO = "roguehostapdinfo"
 DEFAULT_EXTENSIONS = [DEAUTH_EXTENSION]
 EXTENSIONS_LOADPATH = "wifiphisher.extensions."
 PORT = 8080
 SSL_PORT = 443
 CHANNEL = 6
+ALL_2G_CHANNELS = range(1, 14)
 WEBSITE = "https://wifiphisher.org"
 PUBLIC_DNS = "8.8.8.8"
 PEM = dir_of_data + 'cert/server.pem'
+PHISHING_PAGES_DIR = dir_of_data + "phishing-pages/"
 SCENARIO_HTML_DIR = "html/"
 LOGOS_DIR = dir_of_data + "logos/"
 LOCS_DIR = dir_of_data + "locs/"
 MAC_PREFIX_FILE = dir_of_data + "wifiphisher-mac-prefixes"
-URL_TO_OS_FILE = dir_of_data + "wifiphisher-os-initial-requests"
 KNOWN_WLANS_FILE = dir_of_data + "wifiphisher-known-open-wlans"
 POST_VALUE_PREFIX = "wfphshr"
 NETWORK_IP = "10.0.0.0"
@@ -55,7 +53,6 @@ INTERFERING_PROCS = [
     "dhcpcd", "udhcpc", "avahi-autoipd", "avahi-daemon", "wlassistant",
     "wifibox", "NetworkManager", "knetworkmanager"
 ]
-DNS_CONF_PATH = '/tmp/dnsmasq.conf'
 NEW_YEAR = "01-01"
 BIRTHDAY = "01-05"
 
@@ -139,12 +136,15 @@ LOGGING_CONFIG = {
     "loggers": {},
     'disable_existing_loggers': False
 }
-CREDENTIALS_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+# NM DBus Marcos
+NM_APP_PATH = 'org.freedesktop.NetworkManager'
+NM_MANAGER_OBJ_PATH = '/org/freedesktop/NetworkManager'
+NM_MANAGER_INTERFACE_PATH = 'org.freedesktop.NetworkManager'
+NM_DEV_INTERFACE_PATH = 'org.freedesktop.NetworkManager.Device'
 
 # Phishinghttp
 VALID_POST_CONTENT_TYPE = "application/x-www-form-urlencoded"
-REGEX_PWD = "password|pwd|pass"
-REGEX_UNAME = "username|uname|name"
 
 # TUI
 MAIN_TUI_ATTRS = 'version essid channel ap_iface em phishinghttp args'
@@ -159,4 +159,4 @@ DENY_MACS_PATH = '/tmp/hostapd.deny'
 # Known Beacons
 KB_INTERVAL = 20
 KB_BUCKET_SIZE = 60
-KB_BEACON_CAP = 0x2105
+KB_BEACON_CAP = 0x2105 
